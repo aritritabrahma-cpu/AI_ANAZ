@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from fastapi import FastAPI
 from database import db, cursor
 import pandas as pd
 import os
@@ -213,7 +214,6 @@ with sync_playwright() as p:
 
         key = (current_page, response.url)
 
-        # Keep only highest severity for each API
         if key not in results or severity > results[key]["Severity"]:
             results[key] = {
                 "Page": current_page,
@@ -224,6 +224,10 @@ with sync_playwright() as p:
                 "response_time": response_time,
                 "Severity": severity,
             }
+
+        # -------------------------
+        # Save to MySQL
+        # -------------------------
 
         query = """
         INSERT INTO api_status
@@ -243,8 +247,14 @@ with sync_playwright() as p:
         try:
             cursor.execute(query, values)
             db.commit()
+
         except Exception as e:
             print(f"Database Error: {e}")
+
+        # -------------------------
+        # Send to FastAPI Backend
+        # -------------------------
+
         payload = {
             "page": current_page,
             "api_url": response.url,
@@ -255,14 +265,26 @@ with sync_playwright() as p:
         }
 
         try:
-            requests.post(BACKEND_URL, json=payload, timeout=2)
+            r = requests.post(
+                BACKEND_URL,
+                json=payload,
+                timeout=2,
+            )
+
+            if r.status_code == 200:
+                print(f"✔ Sent -> {response.url}")
+            else:
+                print(f"Backend returned {r.status_code}")
+
         except Exception as e:
             print(f"Backend Error: {e}")
+
     page.on("response", capture_response)
 
     print("Starting Live API Monitor...\nPress Ctrl+C to stop.")
 
     try:
+
         while True:
 
             results.clear()
@@ -272,6 +294,7 @@ with sync_playwright() as p:
                 current_page = page_name
 
                 try:
+
                     page.goto(
                         url,
                         wait_until="domcontentloaded",
@@ -279,6 +302,7 @@ with sync_playwright() as p:
                     )
 
                 except Exception as e:
+
                     print(f"{page_name}: {e}")
                     continue
 
@@ -301,7 +325,7 @@ with sync_playwright() as p:
 
                 df = df.sort_values(
                     by=["Page", "status_code"],
-                    ascending=[True, False]
+                    ascending=[True, False],
                 )
 
                 print(df.to_string(index=False))
@@ -310,11 +334,13 @@ with sync_playwright() as p:
                 print("No API responses captured.")
 
             print("\nRefreshing in 10 seconds...")
-            time.sleep(100)
-            
+
+            time.sleep(10)
 
     except KeyboardInterrupt:
+
         print("\nMonitoring stopped.")
 
     finally:
+
         browser.close()
