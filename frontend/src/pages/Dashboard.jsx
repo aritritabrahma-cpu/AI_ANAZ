@@ -1,90 +1,59 @@
-import { Grid, Card, CardContent, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Container } from "@mui/material";
 
-export default function SummaryCards({ data }) {
+import Navbar from "../components/Navbar";
+import SummaryCards from "../components/SummaryCards";
+import ApiTable from "../components/ApiTable";
+import AIInsights from "../components/AIInsights";
 
-    const healthy = data.filter(api => api.priority === "P5").length;
-    const p1 = data.filter(api => api.priority === "P1").length;
-    const p2 = data.filter(api => api.priority === "P2").length;
+import { fetchApiData } from "../services/api";
 
-    let avg = 0;
+export default function Dashboard() {
 
-    if (data.length > 0) {
+    const [data, setData] = useState([]);
 
-        avg =
-            data.reduce(
-                (sum, api) => sum + api.response_time,
-                0
-            ) / data.length;
+    useEffect(() => {
 
-        avg = avg.toFixed(2);
+        async function loadData() {
 
-    }
+            try {
+
+                const result = await fetchApiData();
+
+                setData(result);
+
+            } catch (err) {
+
+                console.error(err);
+
+            }
+
+        }
+
+        loadData();
+
+        const interval = setInterval(loadData, 3000);
+
+        return () => clearInterval(interval);
+
+    }, []);
 
     return (
 
-        <Grid container spacing={2} sx={{ mt: 2 }}>
+        <>
+            <Navbar />
 
-            <Grid item xs={12} md={3}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6">
-                            Healthy APIs
-                        </Typography>
+            <Container maxWidth="xl">
 
-                        <Typography variant="h4">
-                            {healthy}
-                        </Typography>
+                <SummaryCards data={data} />
 
-                    </CardContent>
-                </Card>
-            </Grid>
+                <ApiTable data={data} />
 
-            <Grid item xs={12} md={3}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6">
-                            P1 Errors
-                        </Typography>
+                <AIInsights data={data} />
 
-                        <Typography variant="h4">
-                            {p1}
-                        </Typography>
+            </Container>
 
-                    </CardContent>
-                </Card>
-            </Grid>
-
-            <Grid item xs={12} md={3}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6">
-                            P2 Errors
-                        </Typography>
-
-                        <Typography variant="h4">
-                            {p2}
-                        </Typography>
-
-                    </CardContent>
-                </Card>
-            </Grid>
-
-            <Grid item xs={12} md={3}>
-                <Card>
-                    <CardContent>
-                        <Typography variant="h6">
-                            Avg Response
-                        </Typography>
-
-                        <Typography variant="h4">
-                            {avg} ms
-                        </Typography>
-
-                    </CardContent>
-                </Card>
-            </Grid>
-
-        </Grid>
+        </>
 
     );
 

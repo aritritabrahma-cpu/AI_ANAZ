@@ -1,6 +1,18 @@
 import { Grid, Card, CardContent, Typography } from "@mui/material";
 
-export default function SummaryCards({ data }) {
+export default function SummaryCards({ data = [] }) {
+
+    const healthy = data.filter(api => api.priority === "P5").length;
+    const p1 = data.filter(api => api.priority === "P1").length;
+    const p2 = data.filter(api => api.priority === "P2").length;
+
+    const avg =
+        data.length > 0
+            ? (
+                data.reduce((sum, api) => sum + Number(api.response_time || 0), 0) /
+                data.length
+              ).toFixed(2)
+            : "0.00";
 
     return (
 
@@ -14,7 +26,7 @@ export default function SummaryCards({ data }) {
                         </Typography>
 
                         <Typography variant="h4">
-                            {data.length}
+                            {healthy}
                         </Typography>
                     </CardContent>
                 </Card>
@@ -28,7 +40,7 @@ export default function SummaryCards({ data }) {
                         </Typography>
 
                         <Typography variant="h4">
-                            -
+                            {p1}
                         </Typography>
                     </CardContent>
                 </Card>
@@ -42,7 +54,7 @@ export default function SummaryCards({ data }) {
                         </Typography>
 
                         <Typography variant="h4">
-                            -
+                            {p2}
                         </Typography>
                     </CardContent>
                 </Card>
@@ -56,7 +68,7 @@ export default function SummaryCards({ data }) {
                         </Typography>
 
                         <Typography variant="h4">
-                            -
+                            {avg} ms
                         </Typography>
                     </CardContent>
                 </Card>
@@ -65,5 +77,4 @@ export default function SummaryCards({ data }) {
         </Grid>
 
     );
-
 }
