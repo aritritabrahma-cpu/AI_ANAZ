@@ -35,7 +35,19 @@ def home():
 
 @app.post("/api/update")
 async def update_status(data: ApiStatus):
+
     latest_data[data.api_url] = data.model_dump()
+
+    disconnected = []
+
+    for client in clients:
+        try:
+            await client.send_json(list(latest_data.values()))
+        except:
+            disconnected.append(client)
+
+    for client in disconnected:
+        clients.remove(client)
 
     return {"success": True}
 
@@ -47,12 +59,12 @@ def get_latest():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+
     await websocket.accept()
     clients.append(websocket)
 
     try:
         while True:
             await websocket.receive_text()
-
     except WebSocketDisconnect:
         clients.remove(websocket)
