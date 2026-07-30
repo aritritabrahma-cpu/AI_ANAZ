@@ -251,9 +251,6 @@ with sync_playwright() as p:
         except Exception as e:
             print(f"Database Error: {e}")
 
-        # -------------------------
-        # Send to FastAPI Backend
-        # -------------------------
 
         payload = {
             "page": current_page,
