@@ -335,7 +335,7 @@ with sync_playwright() as p:
 
             print("\nRefreshing in 10 seconds...")
 
-            time.sleep(10)
+            time.sleep(1000)
 
     except KeyboardInterrupt:
 
